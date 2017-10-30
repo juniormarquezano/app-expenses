@@ -1,25 +1,10 @@
 <template>
-  <!--
-  <q-list v-show="list.length">
-    <q-item v-for="expense in list" :key="expense.id" @click="toggle(expense)" separator class="cursor-pointer">
-      <q-item-main>
-        <q-item-tile :class="{ done: expense.done }" label>
-          {{ expense.date }} - R$ {{ expense.amount }}
-        </q-item-tile>
-        <q-item-tile :class="{ done: expense.done }" sublabel>{{ expense.description }}</q-item-tile>
-      </q-item-main>
-      <q-item-side right>
-        <q-btn color="red" @click.prevent="askRemove(expense)" small>Remover</q-btn>
-      </q-item-side>
-    </q-item>
-  </q-list>
-  -->
   <div>
-    <q-list v-show="list.length" v-for="expense in list" :key="expense.id">
+    <q-list v-show="list.length" v-for="expense in orderedList" :key="expense.id">
       <q-item @click="toggle(expense)" separator class="cursor-pointer">
         <q-item-main>
           <q-item-tile :class="{ done: expense.done }" label>
-            {{ expense.date }} - R$ {{ expense.amount }}
+            {{ expense.date }} - R$ {{ expense.amount.replace('.', ',') }}
           </q-item-tile>
           <q-item-tile :class="{ done: expense.done }" sublabel>{{ expense.description }}</q-item-tile>
         </q-item-main>
@@ -41,16 +26,14 @@
     QBtn,
     Dialog
   } from 'quasar'
-  import { setDone } from '../../services'
+  import _ from 'lodash'
 
   export default {
     components: { QList, QItem, QItemMain, QItemSide, QItemTile, QBtn },
-    data () {
-      return {}
-    },
+    props: ['list'],
     computed: {
-      list () {
-        return this.$store.state.Expenses.list
+      orderedList: function () {
+        return _.orderBy(this.list, 'date', 'desc')
       }
     },
     methods: {
@@ -61,10 +44,7 @@
           message: '<span style="font-size: 13px">Essa operação é irreversível!</span>',
           buttons: [
             {
-              label: 'Cancelar',
-              handler () {
-                self.expense.done = !self.expense.done
-              }
+              label: 'Cancelar'
             },
             {
               label: 'Confirmar',
@@ -77,11 +57,13 @@
         })
       },
       remove (expense) {
-        this.$store.commit('REMOVE_EXPENSE', expense)
+        // Pego uma referência e acesso um determinado registro
+        // Paço a função remove() do firebase para remover o registro
+        this.$db.ref(`expenses/${expense.id}`).remove() // string ES2015
       },
       toggle (expense) {
         expense.done = !expense.done
-        setDone(expense)
+        this.$db.ref(`expenses/${expense.id}`).update(expense)
       }
     }
   }

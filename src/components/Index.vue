@@ -1,30 +1,30 @@
 <template>
-  <q-layout ref="layout" slot="layout">
+  <q-layout ref="layout">
     <cc-header></cc-header>
     <div class="container">
       <q-btn class="full-width" color="green" icon="note_add" @click="$router.push({name: 'add'})">Nova Despesa</q-btn>
       <hr v-show="list.length > 0">
-      <cc-list v-if="list.length"></cc-list>
-      <q-alert
-        v-else
-        color="info"
-        icon="payment"
-        enter="bounceInLeft"
-        leave="bounceOutRight"
-        class="mt-20"
-      >
-        Nenhuma despesa cadastrada!
-      </q-alert>
+      <cc-list :list="list" v-if="list.length"></cc-list>
+      <div v-else>
+        <q-alert
+          color="info"
+          icon="payment"
+          enter="bounceInLeft"
+          leave="bounceOutRight"
+          class="mt-20"
+        >
+          Nenhuma despesa cadastrada!
+        </q-alert>
+      </div>
     </div>
   </q-layout>
 </template>
 
 <script>
-import { QLayout, QBtn, QAlert, QSideLink } from 'quasar'
-import CcForm from './expenses/Form.vue'
+import { QLayout, QBtn, QAlert, QSideLink, QItemMain } from 'quasar'
 import CcList from './expenses/List.vue'
 import CcHeader from '../../templates/header.vue'
-import { getExpenses } from '../services'
+import _ from 'lodash'
 
 export default {
   components: {
@@ -32,17 +32,36 @@ export default {
     QBtn,
     QAlert,
     QSideLink,
-    CcForm,
     CcList,
-    CcHeader
+    CcHeader,
+    QItemMain
+  },
+  data () {
+    return {
+      list: [] // Propriedade Pai
+    }
   },
   mounted () {
-    this.$store.commit('SET_EXPENSES', getExpenses())
-  },
-  computed: {
-    list () {
-      return this.$store.state.Expenses.list
-    }
+    this.$auth.onAuthStateChanged(user => {
+      if (!user) {
+        // Redirecionar o usuário para rota de autenticação
+        this.$router.push({ name: 'auth' })
+      }
+    })
+    // Faz a referência ao banco no firebase
+    // Escuta ao evento value .on('value', data => {})
+    this.$db.ref('expenses').on('value', data => {
+      // Para ter acesso as informações
+      const obj = data.val()
+      // map (lodash) transforma um objeto em um array javascript para colocar na list
+      // para passar ao componente
+      this.list = _.map(obj, (expense, index) => {
+        // index corresponde a cada Id do objeto (registro) vindo do firebase
+        // Atribui esse Id ao expense.id
+        expense.id = index
+        return expense
+      })
+    })
   }
 }
 </script>

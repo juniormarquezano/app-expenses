@@ -27,6 +27,7 @@ export default new VueRouter({
   routes: [
     { name: 'home', path: '/', component: load('Index') },
     { name: 'add', path: '/add', component: load('expenses/Form') },
+    { name: 'auth', path: '/auth', component: load('auth/Login') },
 
     // Always leave this last one
     { path: '*', component: load('Error404') } // Not found
